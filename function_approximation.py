@@ -11,7 +11,6 @@ import csv
 import matplotlib.pyplot as plt
 import torch
 import numpy as np
-import math
 
 
 def csvScatterPlot(x, y1, y2, x_label, y_label, y1_label, y2_label, title, subtitle, output_folder, filename):      
@@ -61,20 +60,24 @@ if __name__ == "__main__":
                    'using backpropagation (PyTorch)', 'output//', 'xy_scatterplot.png')
 
 
-    #----  using PyTorch to approximate best fit to the data
-    #      with 4th order polynomial
+    #----  using PyTorch to approximate best fit to the data with 4th order polynomial
     #      y = b_0 + b_1(x) + b_2(x^2) + b_3(x^3) + b_4(x^4)
 
     x = torch.from_numpy(np.array(x_orig))
     y = torch.from_numpy(np.array(y_orig))
     
+    # starting with randomly assigned coefficients for the polynomial
     b0 = torch.randn((1), device=torch.device("cpu"), dtype=torch.float, requires_grad=True)
     b1 = torch.randn((1), device=torch.device("cpu"), dtype=torch.float, requires_grad=True)
     b2 = torch.randn((1), device=torch.device("cpu"), dtype=torch.float, requires_grad=True)
     b3 = torch.randn((1), device=torch.device("cpu"), dtype=torch.float, requires_grad=True)
     b4 = torch.randn((1), device=torch.device("cpu"), dtype=torch.float, requires_grad=True)
-        
+
+    
     for epoch in range(epochs):
+        
+        # In each epoch, we will do a forward pass, compute the loss, backpropagate,
+        # calculate gradients for the coefficients and update them. 
         
         # forward pass
         y_hat = b0 + b1*x + b2*x**2 + b3*x**3 + b4*x**4
@@ -89,34 +92,37 @@ if __name__ == "__main__":
         # get gradients, update weights (remember to zero out the gradients)
         with torch.no_grad():
             b0 -= learning_rate * b0.grad
-            b0.grad = None
+            #b0.grad = None  or
+            b0.grad.zero_()
             
             b1 -= learning_rate * b1.grad
-            b1.grad = None
+            b1.grad.zero_()
             
             b2 -= learning_rate * b2.grad
-            b2.grad = None
+            b2.grad.zero_()
             
             b3 -= learning_rate * b3.grad
-            b3.grad = None
+            b3.grad.zero_()
             
             b4 -= learning_rate * b4.grad
-            b4.grad = None
+            b4.grad.zero_()
             
         
+    #---- get final coefficients for the polynomial and print
     b0 = round(b0.item(), 4)
     b1 = round(b1.item(), 4)
     b2 = round(b2.item(), 4)
     b3 = round(b3.item(), 4)
     b4 = round(b4.item(), 4)
 
-    
     print(f'\nFunction: y = {b0} + {b1} x + {b2} x^2 + {b3} x^3 + {b4} x^4')
-    
+
+
+    #---- visualize the fit by overlaying yhat with y on the scatterplot
     y_hat = []
     
     for x in x_orig:
         y_hat.append(b0 + b1*x + b2*x**2 + b3*x**3 + b4*x**4)
     
     csvScatterPlot(x_orig, y_orig, y_hat, cols[0], cols[1], 'data', 'function', 'Function Approximation', \
-                   'using backpropagation (PyTorch)', 'output//', 'func_scatterplot.png')      
+                   'using backpropagation (PyTorch)', 'output//', 'func_scatterplot.png') 
